@@ -29,8 +29,8 @@ define("oauth2_redirect_uri", type=str, default=None,
        help="Google oauth2 redirect uri (requires --auth)")
 define("max_tasks", type=int, default=10000,
        help="maximum number of tasks to keep in memory")
-define("db", type=str, default='flower',
-       help="flower database file")
+define("db", type=object, default='flower',
+       help="flower database")
 define("persistent", type=bool, default=False,
        help="enable persistent mode")
 define("broker_api", type=str, default=None,
@@ -51,6 +51,8 @@ define("enable_events", type=bool, default=True,
        help="periodically enable Celery events")
 define("format_task", type=types.FunctionType, default=None,
        help="use custom task formatter")
+define("format_experiment", type=types.FunctionType, default=None,
+       help="use custom experiment formatter")
 define("natural_time", type=bool, default=True,
        help="show time in relative format")
 

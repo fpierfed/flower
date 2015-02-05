@@ -14,6 +14,7 @@ from .api import control
 from .urls import handlers
 from .events import Events
 from .options import default_options
+from .db import DB
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ class Flower(tornado.web.Application):
                                        enable_events=self.options.enable_events,
                                        io_loop=self.io_loop,
                                        max_tasks_in_memory=self.options.max_tasks)
+        self.db = DB(self.options.db)
 
     def start(self):
         self.pool = self.pool_executor_cls(max_workers=self.max_workers)

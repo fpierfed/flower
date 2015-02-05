@@ -11,17 +11,18 @@ import celery
 from tornado import web
 
 from ..views import BaseHandler
-from ..utils.tasks import iter_tasks, get_task_by_id
+from ..utils.experiments import iter_experiments, get_experiment_by_id
+from .. import models
 
 
 class ExperimentView(BaseHandler):
     @web.authenticated
-    def get(self, task_id):
-        task = get_task_by_id(self.application.events, task_id)
-        if task is None:
-            raise web.HTTPError(404, "Unknown task '%s'" % task_id)
+    def get(self, experiment_id):
+        experiment = get_experiment_by_id(self.application, experiment_id)
+        if experiment is None:
+            raise web.HTTPError(404, "Unknown experiment '%s'" % experiment_id)
 
-        self.render("experiment.html", task=task)
+        self.render("experiment.html", experiment=experiment)
 
 
 class ExperimentsView(BaseHandler):
@@ -43,22 +44,23 @@ class ExperimentsView(BaseHandler):
         type = type if type != 'All' else None
         state = state if state != 'All' else None
 
-        tasks = iter_tasks(app.events, limit=limit, type=type,
-                           worker=worker, state=state, sort_by=sort_by,
-                           received_start=received_start,
-                           received_end=received_end,
-                           started_start=started_start,
-                           started_end=started_end)
-        tasks = imap(self.format_task, tasks)
+        experiments = iter_experiments(app, limit=limit, type=type,
+                                       worker=worker, state=state,
+                                       sort_by=sort_by,
+                                       received_start=received_start,
+                                       received_end=received_end,
+                                       started_start=started_start,
+                                       started_end=started_end)
+        experiments = imap(self.format_experiment, experiments)
         workers = app.events.state.workers
-        seen_task_types = app.events.state.task_types()
+        seen_experiment_types = models.experiment.experiment_types()
         time = 'natural-time' if app.options.natural_time else 'time'
         if capp.conf.CELERY_TIMEZONE:
             time += '-' + capp.conf.CELERY_TIMEZONE
         params = {k: v[-1] for k, v in self.request.query_arguments.items()}
 
-        self.render("experiments.html", tasks=tasks,
-                    task_types=seen_task_types,
+        self.render("experiments.html", experiments=experiments,
+                    experiment_types=seen_experiment_types,
                     all_states=celery.states.ALL_STATES,
                     workers=workers,
                     limit=limit,
@@ -73,10 +75,10 @@ class ExperimentsView(BaseHandler):
                     started_start=started_start,
                     started_end=started_end)
 
-    def format_task(self, args):
-        uuid, task = args
-        custom_format_task = self.application.options.format_task
+    def format_experiment(self, args):
+        uuid, experiment = args
+        custom_format_experiment = self.application.options.format_experiment
 
-        if custom_format_task:
-            task = custom_format_task(copy.copy(task))
-        return uuid, task
+        if custom_format_experiment:
+            experiment = custom_format_experiment(copy.copy(experiment))
+        return uuid, experiment
